@@ -97,7 +97,7 @@ export default function Home() {
             {/* Enhanced CTA Section */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               <Link
-                href="/create-account"
+                href="/createAccount"
                 className="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold px-8 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex items-center gap-2"
               >
                 Create Society Account

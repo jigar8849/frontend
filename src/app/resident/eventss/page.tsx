@@ -1,9 +1,9 @@
 import React from 'react'
-import SocityAccount from '@/components/account/CreateAccount'
+import BookEvent from '@/components/resident/BookEvent'
 function page() {
   return (
     <div>
-        <SocityAccount />
+      <BookEvent />
     </div>
   )
 }

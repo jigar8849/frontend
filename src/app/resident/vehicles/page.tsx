@@ -1,9 +1,9 @@
 import React from 'react'
-import SocityAccount from '@/components/account/CreateAccount'
+import Vehicles from '@/components/resident/Vehicles'
 function page() {
   return (
     <div>
-        <SocityAccount />
+      <Vehicles />
     </div>
   )
 }
