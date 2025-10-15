@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useMemo, useState } from "react";
 import {
@@ -75,7 +76,9 @@ export default function ComplaintsManagement() {
   // --- derived stats ---
   const total = complaints.length;
   const pending = complaints.filter((c) => c.status === "Pending").length;
-  const inProgress = complaints.filter((c) => c.status === "In-Progress").length;
+  const inProgress = complaints.filter(
+    (c) => c.status === "In-Progress"
+  ).length;
   const resolved = complaints.filter((c) => c.status === "Resolved").length;
 
   // --- filters + search ---
@@ -229,13 +232,21 @@ export default function ComplaintsManagement() {
                 <td className="p-3">{c.category}</td>
 
                 <td className="p-3">
-                  <span className={`px-2 py-1 rounded-md text-sm font-medium ${priorityBadge(c.priority)}`}>
+                  <span
+                    className={`px-2 py-1 rounded-md text-sm font-medium ${priorityBadge(
+                      c.priority
+                    )}`}
+                  >
                     {c.priority}
                   </span>
                 </td>
 
                 <td className="p-3">
-                  <span className={`px-2 py-1 rounded-md text-sm font-medium ${statusBadge(c.status)}`}>
+                  <span
+                    className={`px-2 py-1 rounded-md text-sm font-medium ${statusBadge(
+                      c.status
+                    )}`}
+                  >
                     {c.status}
                   </span>
                 </td>
@@ -243,9 +254,12 @@ export default function ComplaintsManagement() {
                 <td className="p-3">{c.date}</td>
 
                 <td className="p-3">
-                  <button className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">
+                  <Link
+                    href="/admin/forms/manageComplain"
+                    className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700"
+                  >
                     Manage
-                  </button>
+                  </Link>
                 </td>
               </tr>
             ))}

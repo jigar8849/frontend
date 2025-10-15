@@ -1,7 +1,9 @@
 'use client'
+
 import React, { useState } from "react";
 import { FaArrowLeft, FaUser } from "react-icons/fa";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Props = {
   error?: string;
@@ -9,18 +11,61 @@ type Props = {
 };
 
 export default function ResidentLogin({ error, success }: Props) {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [localSuccess, setLocalSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     if (!email || !password) {
       setLocalError("Please enter both email and password.");
+      setLocalSuccess(null);
       return;
     }
+
     setLocalError(null);
-    // Implement form submit logic (API call, etc.) here
+    setLocalSuccess(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/resident-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json", // ask backend for JSON
+        },
+        credentials: "include", // store session cookie
+        body: JSON.stringify({
+          email,
+          create_password: password, // backend expects 'create_password'
+        }),
+      });
+
+      const body = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setLocalError(body?.error || `Login failed (${res.status})`);
+        setLocalSuccess(null);
+        return;
+      }
+
+      setLocalSuccess(body?.message || "Logged in");
+      setLocalError(null);
+
+      const to = body?.redirect || "/resident/dashboard";
+      router.push(to);
+    } catch (err: any) {
+      setLocalError(err?.message || "Network error");
+      setLocalSuccess(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,10 +73,7 @@ export default function ResidentLogin({ error, success }: Props) {
       <div className="w-full max-w-md p-6 md:p-8 rounded-2xl shadow-xl bg-white border border-gray-100 flex flex-col gap-4">
         {/* Back Link */}
         <div className="flex items-center">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-blue-700 hover:underline transition font-medium"
-          >
+          <Link href="/" className="flex items-center gap-2 text-blue-700 hover:underline transition font-medium">
             <FaArrowLeft /> Back to Home
           </Link>
         </div>
@@ -48,24 +90,19 @@ export default function ResidentLogin({ error, success }: Props) {
         <p className="text-center text-gray-500 mb-2">Access your society services</p>
 
         {/* Alerts */}
-        {localError && (
+        {(localError || error) && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-2 text-center text-sm">
-            {localError}
+            {localError || error}
           </div>
         )}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-2 text-center text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
+        {(localSuccess || success) && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded mb-2 text-center text-sm">
-            {success}
+            {localSuccess || success}
           </div>
         )}
 
         {/* Form */}
-        <form className="w-full mt-2" onSubmit={handleSubmit}>
+        <form className="w-full mt-2" onSubmit={handleSubmit} autoComplete="on">
           <label htmlFor="email" className="block text-gray-700 font-semibold mb-1">
             Email Address
           </label>
@@ -95,20 +132,17 @@ export default function ResidentLogin({ error, success }: Props) {
           />
 
           <div className="flex flex-col sm:flex-row items-center justify-end gap-2 mt-4">
-            {/* Optionally, you can add Remember Me box here */}
-            <Link
-              href="#"
-              className="text-blue-600 hover:underline text-sm mt-2 sm:mt-0"
-            >
+            <Link href="#" className="text-blue-600 hover:underline text-sm mt-2 sm:mt-0">
               Forgot password?
             </Link>
           </div>
 
           <button
             type="submit"
-            className="w-full mt-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow transition-transform active:scale-95"
+            disabled={loading}
+            className="w-full mt-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow transition-transform active:scale-95 disabled:opacity-60"
           >
-            Login as Resident
+            {loading ? "Logging in..." : "Login as Resident"}
           </button>
         </form>
 
@@ -118,6 +152,10 @@ export default function ResidentLogin({ error, success }: Props) {
           <b className="block font-semibold text-blue-700 mt-1">
             Contact your society admin for account setup
           </b>
+        </div>
+         <div className="text-center mt-2">
+          <p><b>Credential : jigar@gmail.com </b><br></br></p>
+        <p><b>Pass : jigar1234</b></p>
         </div>
       </div>
     </div>

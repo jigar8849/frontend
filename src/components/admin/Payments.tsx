@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Search, DollarSign, CreditCard, Filter } from "lucide-react";
 
 export default function PaymentManagement() {
@@ -26,12 +27,21 @@ export default function PaymentManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Payment Management</h1>
         <div className="flex gap-2">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          {/* Manage Created Bills -> link */}
+          <Link
+            href="/admin/forms/manageBills" /* change if your route differs */
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
             Manage Created Bills
-          </button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          </Link>
+
+          {/* Create Bills -> link */}
+          <Link
+            href="/admin/forms/createBill" /* change if your route differs */
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
             Create Bills
-          </button>
+          </Link>
         </div>
       </div>
 

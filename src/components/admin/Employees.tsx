@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Users,
   UserCheck,
@@ -26,14 +27,12 @@ export default function EmployeeManagement() {
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("All");
 
-  // mock data
   const employees: Employee[] = [
     { id: 1, name: "bhavya", role: "Security Guard", shift: "Night", phone: "908907089", salary: 1234, joinDate: "2025-07-24", status: "Active" },
     { id: 2, name: "shaddha", role: "Cleaner", phone: "8849602896", salary: 123, joinDate: "2025-07-10", status: "Active" },
     { id: 3, name: "eee", role: "Other", phone: "90890700", salary: 5345, joinDate: "2025-07-31", status: "Active" },
   ];
 
-  // stats
   const total = employees.length;
   const active = employees.filter((e) => e.status === "Active").length;
   const inactive = total - active;
@@ -41,7 +40,6 @@ export default function EmployeeManagement() {
 
   const roles = ["All", ...Array.from(new Set(employees.map((e) => e.role)))];
 
-  // filter + search
   const rows = useMemo(() => {
     const text = q.trim().toLowerCase();
     return employees.filter((e) => {
@@ -63,47 +61,49 @@ export default function EmployeeManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Employee Management</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-flex items-center gap-2">
+        <Link
+          href="/admin/forms/addEmployee"
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-flex items-center gap-2"
+        >
           <Plus className="h-5 w-5" />
           Add New Employee
-        </button>
+        </Link>
       </div>
 
-     {/* Stat Cards */}
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-  <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-    <div>
-      <p className="text-gray-500">Total Employees</p>
-      <h2 className="text-xl font-bold">{total}</h2>
-    </div>
-    <Users className="h-10 w-10 text-blue-600" />
-  </div>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+          <div>
+            <p className="text-gray-500">Total Employees</p>
+            <h2 className="text-xl font-bold">{total}</h2>
+          </div>
+          <Users className="h-10 w-10 text-blue-600" />
+        </div>
 
-  <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-    <div>
-      <p className="text-gray-500">Active</p>
-      <h2 className="text-xl font-bold text-emerald-700">{active}</h2>
-    </div>
-    <UserCheck className="h-10 w-10 text-emerald-600" />
-  </div>
+        <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+          <div>
+            <p className="text-gray-500">Active</p>
+            <h2 className="text-xl font-bold text-emerald-700">{active}</h2>
+          </div>
+          <UserCheck className="h-10 w-10 text-emerald-600" />
+        </div>
 
-  <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-    <div>
-      <p className="text-gray-500">In-active</p>
-      <h2 className="text-xl font-bold text-rose-600">{inactive}</h2>
-    </div>
-    <UserX className="h-10 w-10 text-rose-500" />
-  </div>
+        <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+          <div>
+            <p className="text-gray-500">In-active</p>
+            <h2 className="text-xl font-bold text-rose-600">{inactive}</h2>
+          </div>
+          <UserX className="h-10 w-10 text-rose-500" />
+        </div>
 
-  <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-    <div>
-      <p className="text-gray-500">Monthly Payroll</p>
-      <h2 className="text-xl font-bold">{money(monthlyPayroll)}</h2>
-    </div>
-    <Wallet className="h-10 w-10 text-indigo-600" />
-  </div>
-</div>
-
+        <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+          <div>
+            <p className="text-gray-500">Monthly Payroll</p>
+            <h2 className="text-xl font-bold">{money(monthlyPayroll)}</h2>
+          </div>
+          <Wallet className="h-10 w-10 text-indigo-600" />
+        </div>
+      </div>
 
       {/* Search + Role filter */}
       <div className="mt-6 flex flex-col sm:flex-row gap-4">
@@ -173,9 +173,16 @@ export default function EmployeeManagement() {
                   </span>
                 </td>
                 <td className="p-3">
-                  <button className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700">
-                    Manage
-                  </button>
+                  <Link
+  href="/admin/forms/manageEmp"
+  className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700"
+>
+  Manage
+</Link>
+
+
+
+
                 </td>
               </tr>
             ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { FaPlus, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 
 interface Resident {
@@ -36,12 +37,15 @@ export default function ResidentsPage() {
     <div className="p-4 mt-15 md:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Resident Management
-        </h1>
-        <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md shadow hover:bg-blue-700 transition">
+        <h1 className="text-2xl font-bold text-gray-800">Resident Management</h1>
+
+        {/* Changed to Link */}
+        <Link
+          href="/admin/forms/addMember"
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md shadow hover:bg-blue-700 transition"
+        >
           <FaPlus /> Add New Resident
-        </button>
+        </Link>
       </div>
 
       {/* Filters */}
@@ -79,19 +83,14 @@ export default function ResidentsPage() {
           </thead>
           <tbody>
             {residents.map((r) => (
-              <tr
-                key={r.id}
-                className="border-t hover:bg-gray-50 transition-colors"
-              >
+              <tr key={r.id} className="border-t hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
                   <span className="font-semibold">{r.name}</span>
                   <div className="text-sm text-gray-500">ID: {r.id}</div>
                 </td>
                 <td className="px-4 py-3">
                   {r.flat}
-                  <div className="text-sm text-gray-500">
-                    Joined: {r.joined}
-                  </div>
+                  <div className="text-sm text-gray-500">Joined: {r.joined}</div>
                 </td>
                 <td className="px-4 py-3">
                   {r.email}
@@ -130,10 +129,7 @@ export default function ResidentsPage() {
         {/* Mobile View (Card Style) */}
         <div className="md:hidden space-y-4">
           {residents.map((r) => (
-            <div
-              key={r.id}
-              className="border rounded-lg p-4 shadow-sm bg-white space-y-2"
-            >
+            <div key={r.id} className="border rounded-lg p-4 shadow-sm bg-white space-y-2">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="font-semibold">{r.name}</h2>

@@ -1,8 +1,8 @@
 'use client'
 import React, { useState } from "react";
 import Link from "next/link";
-
 import { FaArrowLeft, FaBuilding } from "react-icons/fa";
+// import { useRouter } from "next/navigation"; // uncomment if you want to redirect on success
 
 type Props = {
   error?: string;
@@ -10,6 +10,8 @@ type Props = {
 };
 
 export default function CreateSocietyAccount({ error, success }: Props) {
+  // const router = useRouter();
+
   const [form, setForm] = useState({
     socity_name: "",
     total_flat: "",
@@ -28,32 +30,133 @@ export default function CreateSocietyAccount({ error, success }: Props) {
     password: "",
     confirm_password: "",
   });
+
   const [localError, setLocalError] = useState<string | null>(null);
+  const [localSuccess, setLocalSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
   function validate() {
-    if (!form.socity_name || !form.email || !form.password || !form.confirm_password) 
+    if (!form.socity_name || !form.email || !form.password || !form.confirm_password)
       return "Please fill all required fields.";
-    if (form.password.length < 6) 
+    if (form.password.length < 6)
       return "Password must be at least 6 characters.";
-    if (form.password !== form.confirm_password) 
+    if (form.password !== form.confirm_password)
       return "Passwords do not match.";
-    // You can add more detailed checks as needed
     return null;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function toNumber(v: string) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
+
     const validation = validate();
     if (validation) {
+      setLocalSuccess(null);
       setLocalError(validation);
       return;
     }
+
+    const payload = {
+      socity_name: form.socity_name,
+      socity_address: form.socity_address,
+      city: form.city,
+      state: form.state,
+      pincode: toNumber(form.pincode),
+      total_block: toNumber(form.total_block),
+      total_floor: toNumber(form.total_floor),
+      total_flat: toNumber(form.total_flat),
+      house_per_level: toNumber(form.house_per_level),
+      total_four_wheeler_slot: toNumber(form.total_four_wheeler_slot),
+      total_two_wheeler_slot: toNumber(form.total_two_wheeler_slot),
+      admin_name: form.admin_name,
+      phone: toNumber(form.phone),
+      email: form.email,
+      password: form.password,
+      confirm_password: form.confirm_password,
+    };
+
+    // Validate numeric fields explicitly so we don't send null/NaN
+    const numericFields = [
+      "pincode",
+      "total_block",
+      "total_floor",
+      "total_flat",
+      "house_per_level",
+      "total_four_wheeler_slot",
+      "total_two_wheeler_slot",
+      "phone",
+    ] as const;
+
+    for (const f of numericFields) {
+      // @ts-ignore - dynamic access
+      if (payload[f] === null) {
+        setLocalSuccess(null);
+        setLocalError(`Please enter a valid number for ${f.replaceAll("_", " ")}`);
+        return;
+      }
+    }
+
     setLocalError(null);
-    // Submit the form, e.g. via fetch/axios
+    setLocalSuccess(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/create-account`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const body = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setLocalSuccess(null);
+        setLocalError(body?.error || `Request failed (${res.status})`);
+        return;
+      }
+
+      // Success: { ok:true, message, id }
+      setLocalError(null);
+      setLocalSuccess(`${body?.message || "Account created"} (id: ${body?.id})`);
+
+      // Optional: reset form
+      setForm({
+        socity_name: "",
+        total_flat: "",
+        total_block: "",
+        total_floor: "",
+        house_per_level: "",
+        total_four_wheeler_slot: "",
+        total_two_wheeler_slot: "",
+        socity_address: "",
+        city: "",
+        state: "",
+        pincode: "",
+        admin_name: "",
+        email: "",
+        phone: "",
+        password: "",
+        confirm_password: "",
+      });
+
+      // Optional: redirect to dashboard
+      // router.push("/admin/dashboard");
+    } catch (err: any) {
+      setLocalSuccess(null);
+      setLocalError(err?.message || "Network error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -82,9 +185,9 @@ export default function CreateSocietyAccount({ error, success }: Props) {
                 {localError || error}
               </div>
             )}
-            {success && (
+            {(localSuccess || success) && (
               <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 mb-4 rounded text-center text-sm">
-                {success}
+                {localSuccess || success}
               </div>
             )}
 
@@ -210,6 +313,7 @@ export default function CreateSocietyAccount({ error, success }: Props) {
                     <div className="flex-1">
                       <label className="block mb-1 font-medium">Pincode</label>
                       <input
+                        type="number"
                         className="w-full rounded border border-gray-300 px-3 py-2"
                         name="pincode"
                         required
@@ -288,9 +392,10 @@ export default function CreateSocietyAccount({ error, success }: Props) {
               <div className="text-center">
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 text-lg shadow transition-all active:scale-95"
+                  disabled={loading}
+                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 text-lg shadow transition-all active:scale-95 disabled:opacity-60"
                 >
-                  Create Society Account
+                  {loading ? "Creating..." : "Create Society Account"}
                 </button>
               </div>
             </form>

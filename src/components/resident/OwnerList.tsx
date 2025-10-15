@@ -81,7 +81,7 @@ export default function OwnersPage() {
   /* ---------- if no block selected, show grid ---------- */
   if (!selectedBlock) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 mt-20">
         <header>
           <h1 className="text-3xl font-extrabold tracking-tight">
             Owners &amp; Residents List
@@ -107,9 +107,9 @@ export default function OwnersPage() {
   /* ---------- else show residents list ---------- */
   return (
     <div className="space-y-6 mt-15">
-      <div className="flex flex-wrap mt-15 items-center justify-between gap-3">
+      <div className="flex flex-wrap  items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl mt-15 font-extrabold tracking-tight">
+          <h1 className="text-3xl  font-extrabold tracking-tight">
             Block-{selectedBlock} Residents List
           </h1>
           <p className="text-sm text-gray-600">Directory of all society members</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   User,
   Home,
@@ -48,24 +49,24 @@ const INITIAL_VEHICLES: Vehicle[] = [
 /* ---------------- utils ---------------- */
 const fullName = (p: Profile) => `${p.firstName} ${p.lastName}`;
 const dateIN = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
+  new Date(iso).toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 const vehicleBadge = (t: Vehicle["type"]) =>
   t === "2-wheeler" ? "bg-emerald-50 text-emerald-700" : "bg-indigo-50 text-indigo-700";
 
 /* ---------------- page ---------------- */
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile>(INITIAL_PROFILE);
+  const [profile] = useState<Profile>(INITIAL_PROFILE);
   const [family, setFamily] = useState<string[]>(INITIAL_FAMILY);
   const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
 
-  const [showEdit, setShowEdit] = useState(false);
+  // removed: showEdit + EditProfileModal
   const [showAddMember, setShowAddMember] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
 
-  const onSaveProfile = (next: Profile) => {
-    setProfile(next);
-    setShowEdit(false);
-  };
   const onAddMember = (name: string) => {
     if (name.trim()) setFamily((f) => [...f, name.trim()]);
     setShowAddMember(false);
@@ -81,20 +82,24 @@ export default function ProfilePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">My Profile</h1>
-          <p className="text-sm text-gray-600">Manage your personal information and family details</p>
+          <p className="text-sm text-gray-600">
+            Manage your personal information and family details
+          </p>
         </div>
-        <button
-          onClick={() => setShowEdit(true)}
+
+        {/* Edit Profile → Link */}
+        <Link
+          href="/resident/forms/editProfile"
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
         >
           <Pencil className="h-4 w-4" />
           Edit Profile
-        </button>
+        </Link>
       </div>
 
       {/* top grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* LEFT: improved Identity card */}
+        {/* LEFT: Identity card */}
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           {/* avatar + name */}
           <div className="flex flex-col items-center text-center">
@@ -102,7 +107,9 @@ export default function ProfilePage() {
               <User className="h-12 w-12" />
             </div>
 
-            <h2 className="mt-4 text-2xl font-extrabold text-gray-900">{fullName(profile)}</h2>
+            <h2 className="mt-4 text-2xl font-extrabold text-gray-900">
+              {fullName(profile)}
+            </h2>
 
             <a
               href="#"
@@ -128,13 +135,16 @@ export default function ProfilePage() {
             </li>
             <li className="grid grid-cols-[20px_1fr] items-center gap-3">
               <Phone className="h-5 w-5 text-gray-500" />
-              <a href={`tel:${profile.phone}`} className="text-sm font-medium text-gray-900 hover:underline">
+              <a
+                href={`tel:${profile.phone}`}
+                className="text-sm font-medium text-gray-900 hover:underline"
+              >
                 {profile.phone}
               </a>
             </li>
           </ul>
 
-          {/* meta chips (wrap on mobile) */}
+          {/* meta chips */}
           <div className="mt-5 flex flex-wrap gap-2">
             <MetaChip>
               <UsersIcon className="h-4 w-4" />
@@ -147,18 +157,21 @@ export default function ProfilePage() {
             <MetaChip>
               <span className="inline-block h-3 w-3 rounded-sm bg-gray-400" />
               Resident since{" "}
-              {new Date(profile.since).toLocaleString("en-IN", { month: "short", year: "numeric" })}
+              {new Date(profile.since).toLocaleString("en-IN", {
+                month: "short",
+                year: "numeric",
+              })}
             </MetaChip>
           </div>
 
-          {/* action */}
-          <button
+          {/* Change Password → Link */}
+          <Link
+            href="/resident/forms/changePassword"
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
-            onClick={() => alert("Change Password (demo)")}
           >
             <Key className="h-4 w-4" />
             Change Password
-          </button>
+          </Link>
         </section>
 
         {/* RIGHT: personal information */}
@@ -243,15 +256,7 @@ export default function ProfilePage() {
         </section>
       </div>
 
-      {/* Modals */}
-      {showEdit && (
-        <EditProfileModal
-          initial={profile}
-          onClose={() => setShowEdit(false)}
-          onSave={onSaveProfile}
-        />
-      )}
-
+      {/* Modals (kept) */}
       {showAddMember && (
         <AddMemberModal onClose={() => setShowAddMember(false)} onSave={onAddMember} />
       )}
@@ -286,57 +291,6 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-/* ---- Edit Profile Modal ---- */
-function EditProfileModal({
-  initial,
-  onClose,
-  onSave,
-}: {
-  initial: Profile;
-  onClose: () => void;
-  onSave: (next: Profile) => void;
-}) {
-  const [form, setForm] = useState<Profile>(initial);
-
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 px-4">
-      <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl">
-        <div className="border-b border-gray-100 px-5 py-3">
-          <h3 className="text-lg font-semibold">Edit Profile</h3>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
-          <Text label="First Name" value={form.firstName} onChange={(v) => setForm({ ...form, firstName: v })} />
-          <Text label="Last Name" value={form.lastName} onChange={(v) => setForm({ ...form, lastName: v })} />
-          <Text label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
-          <Text label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-          <Text label="Emergency Contact" value={form.emergency} onChange={(v) => setForm({ ...form, emergency: v })} />
-          <Text label="Flat" value={form.flat} onChange={(v) => setForm({ ...form, flat: v })} />
-          <Select
-            label="Role"
-            value={form.role}
-            onChange={(v) => setForm({ ...form, role: v as Profile["role"] })}
-            options={["Owner", "Tenant"]}
-          />
-          <Text label="Date of Birth" type="date" value={form.dob} onChange={(v) => setForm({ ...form, dob: v })} />
-        </div>
-
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-5 py-3">
-          <button className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            onClick={() => onSave(form)}
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ---- Add Member Modal ---- */
 function AddMemberModal({
   onClose,
@@ -356,7 +310,10 @@ function AddMemberModal({
           <Text label="Full Name" value={name} onChange={setName} />
         </div>
         <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-5 py-3">
-          <button className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" onClick={onClose}>
+          <button
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            onClick={onClose}
+          >
             Cancel
           </button>
           <button
@@ -389,7 +346,11 @@ function EditVehicleModal({
           <h3 className="text-lg font-semibold">Edit Vehicle</h3>
         </div>
         <div className="grid grid-cols-1 gap-4 px-5 py-4">
-          <Text label="Registration No." value={form.regNo} onChange={(v) => setForm({ ...form, regNo: v })} />
+          <Text
+            label="Registration No."
+            value={form.regNo}
+            onChange={(v) => setForm({ ...form, regNo: v })}
+          />
           <Select
             label="Type"
             value={form.type}
@@ -398,7 +359,10 @@ function EditVehicleModal({
           />
         </div>
         <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-5 py-3">
-          <button className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" onClick={onClose}>
+          <button
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            onClick={onClose}
+          >
             Cancel
           </button>
           <button

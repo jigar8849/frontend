@@ -10,6 +10,8 @@ import {
   Megaphone,
   Shield,
   Wallet,
+  QrCode,
+  ThumbsUp,
 } from "lucide-react";
 
 // ----- Types (replace with your real ones later)
@@ -23,24 +25,6 @@ const stats = [
   { label: "Open Complaints", value: 1, Icon: Megaphone, tone: "bg-amber-100" },
   { label: "Upcoming Events", value: 3, Icon: CalendarDays, tone: "bg-indigo-100" },
   { label: "Your Vehicles", value: 2, Icon: Car, tone: "bg-emerald-100" },
-];
-
-const bills: Bill[] = [
-  { id: "b1", title: "Maintenance", due: "2024-01-15", amount: 3500, status: "Pending" },
-  { id: "b2", title: "Water Bill", due: "2024-01-20", amount: 450, status: "Pending" },
-  { id: "b3", title: "Electricity", due: "2024-01-10", amount: 5100, status: "Paid" },
-];
-
-const notifications: Notification[] = [
-  { id: "n1", text: "Maintenance bill due in 3 days", timeAgo: "1 hour ago" },
-  { id: "n2", text: "Society meeting scheduled for Jan 20", timeAgo: "1 hour ago" },
-  { id: "n3", text: "Your complaint #123 has been resolved", timeAgo: "1 hour ago" },
-];
-
-const events: Event[] = [
-  { id: "e1", title: "Society Annual Meeting", date: "2024-01-20 at 6:00 PM", place: "Club House" },
-  { id: "e2", title: "Holi Celebration", date: "2024-03-24 at 5:00 PM", place: "Garden Area" },
-  { id: "e3", title: "Health Camp", date: "2024-02-05 at 10:00 AM", place: "Community Hall" },
 ];
 
 // ----- Small UI bits
@@ -72,27 +56,7 @@ function SectionHeader({
   );
 }
 
-function StatusPill({ status }: { status: Bill["status"] }) {
-  const isPending = status === "Pending";
-  return (
-    <span
-      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-        isPending
-          ? "bg-rose-50 text-rose-600"
-          : "bg-emerald-50 text-emerald-600"
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
-
-function currency(n: number) {
-  return `₹${n.toLocaleString("en-IN")}`;
-}
-
 export default function ResidentDashboard() {
-  // you could fetch the resident's name from client state/localStorage; hardcoded here
   const residentName = "Jigar Prajapati";
 
   return (
@@ -150,89 +114,93 @@ export default function ResidentDashboard() {
         ))}
       </div>
 
-      {/* MAIN GRID */}
+      {/* ===== NEW MAIN GRID (replaces bills/notifications/events) ===== */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Recent Bills */}
-        <Card className="lg:col-span-1">
-          <SectionHeader
-            title="Recent Bills"
-            Icon={CreditCard}
-            action={
+        {/* Resident ID Card */}
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-3 text-white">
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <Shield className="h-5 w-5" />
+              Resident ID
+            </h3>
+          </div>
+          <div className="flex flex-col items-center gap-4 px-6 py-6 sm:flex-row sm:items-center">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-indigo-100 text-indigo-700 ring-1 ring-inset ring-white/40">
+              <Home className="h-8 w-8" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-lg font-bold text-gray-900">{residentName}</p>
+              <p className="text-sm text-gray-600">Flat: Home D-11 • Tower: Home</p>
+              <p className="text-xs text-gray-500">Member since Jan 2023</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg border border-gray-200 p-3">
+                <QrCode className="h-10 w-10 text-gray-700" />
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-100 px-6 py-3">
+            <div className="flex flex-wrap gap-2">
               <Link
-                href="/resident/billing"
-                className="rounded-md px-2 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                href="/resident/profile"
+                className="rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-100"
               >
-                View all
+                View Profile
               </Link>
-            }
-          />
-          <ul className="divide-y divide-gray-100">
-            {bills.map((b) => (
-              <li key={b.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div>
-                  <p className="font-semibold text-gray-900">{b.title}</p>
-                  <p className="text-sm text-gray-500">Due: {b.due}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-semibold text-gray-900">{currency(b.amount)}</div>
-                  <div className="mt-1">
-                    <StatusPill status={b.status} />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+              <Link
+                href="/resident/vehicles"
+                className="rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 hover:bg-blue-100"
+              >
+                Show Vehicle Pass
+              </Link>
+            </div>
+          </div>
         </Card>
 
-        {/* Notifications */}
-        <Card className="lg:col-span-1">
-          <SectionHeader
-            title="Notification"
-            Icon={Bell}
-            action={<Bell className="mr-2 h-5 w-5 text-gray-500" aria-hidden="true" />}
-          />
-          <ul className="space-y-3 px-4 py-3">
-            {notifications.map((n) => (
-              <li key={n.id} className="flex items-start gap-3">
-                <div className="mt-1 h-2 w-2 rounded-full bg-blue-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{n.text}</p>
-                  <p className="text-xs text-gray-500">{n.timeAgo}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+        {/* Progress / Gamification */}
+        <Card>
+          <SectionHeader title="Your Progress" Icon={ThumbsUp} />
+          <div className="space-y-5 p-5">
+            <Progress label="Profile Completion" value={85} />
+            <Progress label="On-time Payments" value={92} tone="emerald" />
+            <Progress label="Community Participation" value={60} tone="indigo" />
+            <div className="mt-2 text-xs text-gray-500">
+              Tip: Earn badges by attending events and paying bills before the due date.
+            </div>
+          </div>
         </Card>
 
-        {/* Upcoming Events */}
-        <Card className="lg:col-span-1">
-          <SectionHeader
-            title="Upcoming Events"
-            Icon={CalendarDays}
-            action={
+        {/* Community Poll / CTA */}
+        <Card>
+          <SectionHeader title="Community Poll" Icon={Megaphone} />
+          <div className="space-y-4 p-5">
+            <p className="font-medium text-gray-900">
+              Which amenity should we improve next?
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li>• Gym equipment upgrade</li>
+              <li>• Children’s play area flooring</li>
+              <li>• CCTV in parking</li>
+            </ul>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Link
+                href="/resident/polls"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                <ThumbsUp className="h-4 w-4" />
+                Vote Now
+              </Link>
               <Link
                 href="/resident/events"
-                className="rounded-md px-2 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                className="rounded-lg bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800 ring-1 ring-inset ring-gray-200 hover:bg-gray-100"
               >
-                All events
+                See Community Plan
               </Link>
-            }
-          />
-          <div className="space-y-3 px-4 py-3">
-            {events.map((ev) => (
-              <Link
-                key={ev.id}
-                href="/resident/events"
-                className="block rounded-lg bg-indigo-50 px-4 py-3 transition hover:bg-indigo-100"
-              >
-                <p className="font-semibold text-gray-900">{ev.title}</p>
-                <p className="text-sm text-gray-700">{ev.date}</p>
-                <p className="text-sm font-medium text-blue-700">{ev.place}</p>
-              </Link>
-            ))}
+            </div>
           </div>
         </Card>
       </div>
+      {/* ===== END NEW SECTION ===== */}
 
       {/* QUICK ACTIONS */}
       <Card>
@@ -283,6 +251,38 @@ export default function ResidentDashboard() {
             Logout
           </Link>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- tiny components ---------- */
+function Progress({
+  label,
+  value,
+  tone = "blue",
+}: {
+  label: string;
+  value: number;
+  tone?: "blue" | "emerald" | "indigo";
+}) {
+  const color =
+    tone === "emerald"
+      ? "bg-emerald-600"
+      : tone === "indigo"
+      ? "bg-indigo-600"
+      : "bg-blue-600";
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-sm">
+        <span className="font-medium text-gray-800">{label}</span>
+        <span className="text-gray-600">{value}%</span>
+      </div>
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+        <div
+          className={`h-full ${color} rounded-full transition-[width] duration-700`}
+          style={{ width: `${value}%` }}
+        />
       </div>
     </div>
   );
