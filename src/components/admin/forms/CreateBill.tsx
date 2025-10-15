@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type BillType = 'Maintenance' | 'Parking' | 'Water' | 'Electricity' | 'Other';
 
@@ -21,8 +22,10 @@ export default function CreateBillForm({ onSubmit }: Props) {
   const [penalty, setPenalty] = useState('0');
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return setError('Please enter bill title.');
     if (!type) return setError('Please select a bill type.');
@@ -31,7 +34,37 @@ export default function CreateBillForm({ onSubmit }: Props) {
     setError(null);
 
     const payload = { title: title.trim(), type, amount, penalty, dueDate };
-    onSubmit ? onSubmit(payload) : console.log('UI only:', payload);
+
+    if (onSubmit) {
+      onSubmit(payload);
+      return;
+    }
+
+    // Integrate with backend
+    setLoading(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const response = await fetch(`${backendUrl}/admin/createBill`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        router.push('/admin/payments');
+      } else {
+        const errorData = await response.text();
+        setError(`Failed to create bill: ${errorData}`);
+      }
+    } catch (err) {
+      console.error('Error creating bill:', err);
+      setError('Failed to create bill. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

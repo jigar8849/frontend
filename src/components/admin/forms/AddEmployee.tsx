@@ -1,31 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type EmployeeRole =
   | 'Security Guard'
-  | 'Housekeeping'
-  | 'Electrician'
   | 'Plumber'
   | 'Gardener'
-  | 'Manager'
+  | 'Cleaner'
   | 'Other';
 
 type EmployeeStatus = 'Active' | 'On Leave' | 'Inactive';
 
-type Props = {
-  onSubmit?: (data: {
-    name: string;
-    role: EmployeeRole | '';
-    contact: string;
-    salary: string;
-    joinDate: string; // yyyy-mm-dd
-    location: string;
-    status: EmployeeStatus | '';
-  }) => void;
-};
+export default function AddEmployeeForm() {
+  const router = useRouter();
 
-export default function AddEmployeeForm({ onSubmit }: Props) {
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
+  const API_PATH = '/admin/addNewEmployee';
+
   const [name, setName] = useState('');
   const [role, setRole] = useState<EmployeeRole | ''>('');
   const [contact, setContact] = useState('');
@@ -33,28 +25,98 @@ export default function AddEmployeeForm({ onSubmit }: Props) {
   const [joinDate, setJoinDate] = useState('');
   const [location, setLocation] = useState('');
   const [status, setStatus] = useState<EmployeeStatus | ''>('');
-  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [localSuccess, setLocalSuccess] = useState<string | null>(null);
+
+  function toNumber(v: string) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function validate(): string | null {
+    if (!name.trim()) return 'Please enter employee name.';
+    if (!role) return 'Please select a role.';
+    if (!contact.trim()) return 'Please enter contact number.';
+    if (!salary || toNumber(salary) === null || toNumber(salary) <= 0) return 'Please enter a valid salary.';
+    if (!joinDate) return 'Please select join date.';
+    if (!location.trim()) return 'Please enter location.';
+    if (!status) return 'Please select status.';
+    return null;
+  }
+
+  function resetForm() {
+    setName('');
+    setRole('');
+    setContact('');
+    setSalary('');
+    setJoinDate('');
+    setLocation('');
+    setStatus('');
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return setError('Please enter employee name.');
-    if (!role) return setError('Please select a role.');
-    if (!contact.trim()) return setError('Please enter contact number.');
-    if (!salary || Number(salary) <= 0) return setError('Please enter a valid salary.');
-    if (!joinDate) return setError('Please select join date.');
-    if (!status) return setError('Please select status.');
-    setError(null);
+    if (loading) return;
+
+    const message = validate();
+    if (message) {
+      setLocalError(message);
+      setLocalSuccess(null);
+      return;
+    }
+
+    setLoading(true);
+    setLocalError(null);
+    setLocalSuccess(null);
 
     const payload = {
       name: name.trim(),
       role,
-      contact: contact.trim(),
-      salary,
-      joinDate,
+      contact: toNumber(contact),
+      salary: toNumber(salary),
+      join_date: joinDate, // map to schema field
       location: location.trim(),
       status,
     };
-    onSubmit ? onSubmit(payload) : console.log('UI only:', payload);
+
+    // Final safety check for numeric fields
+    if (payload.contact === null) {
+      setLocalError('Please enter a valid contact number.');
+      setLoading(false);
+      return;
+    }
+    if (payload.salary === null) {
+      setLocalError('Please enter a valid salary.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}${API_PATH}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      const body = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setLocalError(body?.error || `Request failed (${res.status})`);
+        return;
+      }
+
+      setLocalSuccess(body?.message || 'Employee added successfully');
+      // Reset form after success
+      resetForm();
+    } catch (err: unknown) {
+      const error = err as Error;
+      setLocalError(error?.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -62,9 +124,9 @@ export default function AddEmployeeForm({ onSubmit }: Props) {
       <div className="mx-auto w-full max-w-5xl">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-6">Add New Employee</h1>
 
-        {error && (
+        {localError && (
           <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+            {localError}
           </div>
         )}
 

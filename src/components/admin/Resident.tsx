@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaPlus, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 
 interface Resident {
-  id: number;
+  id: string;
   name: string;
   flat: string;
   joined: string;
@@ -16,22 +16,62 @@ interface Resident {
   status: "active" | "inactive";
 }
 
-const dummyResidents: Resident[] = [
-  {
-    id: 1,
-    name: "Jigar Prajapati",
-    flat: "Block D-11",
-    joined: "2023-01-15",
-    email: "jigar@gmail.com",
-    phone: "8849602896",
-    members: 2,
-    vehicles: 2,
-    status: "active",
-  },
-];
-
 export default function ResidentsPage() {
-  const [residents] = useState<Resident[]>(dummyResidents);
+  const [residents, setResidents] = useState<Resident[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [residentToDelete, setResidentToDelete] = useState<Resident | null>(null);
+
+  const fetchResidents = async () => {
+    try {
+      const response = await fetch('/api/admin/residents');
+      if (!response.ok) {
+        throw new Error('Failed to fetch residents');
+      }
+      const data = await response.json();
+      setResidents(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResidents();
+  }, []);
+
+  const handleDelete = (resident: Resident) => {
+    setResidentToDelete(resident);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!residentToDelete) return;
+
+    try {
+      const response = await fetch(`/api/admin/residents/${residentToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete resident');
+      }
+
+      // Refresh the residents list
+      await fetchResidents();
+      setShowDeleteModal(false);
+      setResidentToDelete(null);
+    } catch (err) {
+      alert('Failed to delete resident: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setResidentToDelete(null);
+  };
 
   return (
     <div className="p-4 mt-15 md:p-6 lg:p-8">
@@ -114,10 +154,15 @@ export default function ResidentsPage() {
                   <button className="text-blue-600 hover:text-blue-800">
                     <FaEye />
                   </button>
-                  <button className="text-yellow-600 hover:text-yellow-800">
-                    <FaEdit />
-                  </button>
-                  <button className="text-red-600 hover:text-red-800">
+                  <Link href={`/admin/residents/${r.id}/edit`}>
+                    <button className="text-yellow-600 hover:text-yellow-800">
+                      <FaEdit />
+                    </button>
+                  </Link>
+                  <button
+                    className="text-red-600 hover:text-red-800"
+                    onClick={() => handleDelete(r)}
+                  >
                     <FaTrash />
                   </button>
                 </td>
@@ -156,10 +201,15 @@ export default function ResidentsPage() {
                 <button className="text-blue-600 hover:text-blue-800">
                   <FaEye />
                 </button>
-                <button className="text-yellow-600 hover:text-yellow-800">
-                  <FaEdit />
-                </button>
-                <button className="text-red-600 hover:text-red-800">
+                <Link href={`/admin/residents/${r.id}/edit`}>
+                  <button className="text-yellow-600 hover:text-yellow-800">
+                    <FaEdit />
+                  </button>
+                </Link>
+                <button
+                  className="text-red-600 hover:text-red-800"
+                  onClick={() => handleDelete(r)}
+                >
                   <FaTrash />
                 </button>
               </div>
@@ -167,6 +217,42 @@ export default function ResidentsPage() {
           ))}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && residentToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <FaTrash className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">Delete Resident</h3>
+              </div>
+            </div>
+            <div className="mb-6">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to delete <span className="font-semibold">{residentToDelete.name}</span>?
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
