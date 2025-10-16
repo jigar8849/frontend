@@ -13,11 +13,44 @@ export default function NewComplaintPage() {
     file: null as File | null,
   });
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // TODO: replace with your submit logic (API call, server action, etc.)
-    console.log("Submitting:", form);
-    alert("Complaint submitted (demo). Hook this up to your backend!");
+    try {
+      const response = await fetch('http://localhost:3001/resident/api/complaints', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for session
+        body: JSON.stringify({
+          title: form.title,
+          category: form.category,
+          priority: form.priority,
+          description: form.description,
+          date: form.date,
+          resident: undefined, // Will use session from backend
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('Complaint submitted successfully!');
+        // Reset form
+        setForm({
+          title: '',
+          category: '',
+          priority: '',
+          description: '',
+          date: '',
+          file: null,
+        });
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error submitting complaint:', error);
+      alert('Failed to submit complaint. Please try again.');
+    }
   };
 
   return (
@@ -61,10 +94,11 @@ export default function NewComplaintPage() {
                 className="block w-full appearance-none rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none ring-blue-600/20 focus:border-blue-600 focus:ring-4"
               >
                 <option value="">Select Category</option>
-                <option>Noise</option>
-                <option>Cleanliness</option>
+                <option>Maintenance</option>
                 <option>Security</option>
+                <option>Noise</option>
                 <option>Parking</option>
+                <option>Cleaning</option>
                 <option>Other</option>
               </select>
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
