@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -10,28 +10,62 @@ import {
   Plus,
   Search,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 
 type Employee = {
-  id: number;
+  _id: string;
   name: string;
   role: string;
-  shift?: string;
-  phone: string;
+  contact: number;
   salary: number;
-  joinDate: string;
+  join_date: string;
   status: "Active" | "Inactive";
+  location: string;
+};
+
+type EmployeeStats = {
+  totalEmployees: number;
+  totalActiveEmployees: number;
+  totalInactiveEmployees: number;
+  totalSalaryAmount: number;
+};
+
+type EmployeeResponse = {
+  employees: Employee[];
+  stats: EmployeeStats;
 };
 
 export default function EmployeeManagement() {
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("All");
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [stats, setStats] = useState<EmployeeStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const employees: Employee[] = [
-    { id: 1, name: "bhavya", role: "Security Guard", shift: "Night", phone: "908907089", salary: 1234, joinDate: "2025-07-24", status: "Active" },
-    { id: 2, name: "shaddha", role: "Cleaner", phone: "8849602896", salary: 123, joinDate: "2025-07-10", status: "Active" },
-    { id: 3, name: "eee", role: "Other", phone: "90890700", salary: 5345, joinDate: "2025-07-31", status: "Active" },
-  ];
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch('/api/admin/employees');
+        if (!response.ok) {
+          throw new Error('Failed to fetch employees');
+        }
+        const data: EmployeeResponse = await response.json();
+        setEmployees(data.employees);
+        setStats(data.stats);
+      } catch (err) {
+        console.error('Error fetching employees:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch employees');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   const total = employees.length;
   const active = employees.filter((e) => e.status === "Active").length;
@@ -48,13 +82,32 @@ export default function EmployeeManagement() {
         !text ||
         e.name.toLowerCase().includes(text) ||
         e.role.toLowerCase().includes(text) ||
-        e.phone.includes(text);
+        e.contact.toString().includes(text);
       return matchRole && matchText;
     });
   }, [q, roleFilter, employees]);
 
   const money = (n: number) =>
     `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+  if (loading) {
+    return (
+      <div className="p-6 mt-15 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-600">Loading employees...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 mt-15">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <p className="text-red-700">Error loading employees: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 mt-15">
@@ -149,18 +202,17 @@ export default function EmployeeManagement() {
           </thead>
           <tbody>
             {rows.map((e) => (
-              <tr key={e.id} className="border-t hover:bg-gray-50">
+              <tr key={e._id} className="border-t hover:bg-gray-50">
                 <td className="p-3 font-semibold">{e.name}</td>
                 <td className="p-3">
                   <div className="font-medium">{e.role}</div>
                   <div className="text-sm text-gray-500">
-                    Joined: {e.joinDate}
-                    {e.shift ? ` · ${e.shift}` : ""}
+                    Location: {e.location}
                   </div>
                 </td>
-                <td className="p-3">{e.phone}</td>
+                <td className="p-3">{e.contact}</td>
                 <td className="p-3">{money(e.salary)}</td>
-                <td className="p-3">{e.joinDate}</td>
+                <td className="p-3">{new Date(e.join_date).toLocaleDateString()}</td>
                 <td className="p-3">
                   <span
                     className={`px-2 py-1 rounded-md text-sm font-medium ${
@@ -174,15 +226,11 @@ export default function EmployeeManagement() {
                 </td>
                 <td className="p-3">
                   <Link
-  href="/admin/forms/manageEmp"
-  className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700"
->
-  Manage
-</Link>
-
-
-
-
+                    href={`/admin/forms/manageEmp?id=${e._id}`}
+                    className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700"
+                  >
+                    Manage
+                  </Link>
                 </td>
               </tr>
             ))}

@@ -1,25 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, DollarSign, CreditCard, Filter } from "lucide-react";
 
+interface Payment {
+  id: string;
+  residentName: string;
+  flat: string;
+  billTitle: string;
+  billType: string;
+  baseAmount: number;
+  penaltyAmount: number;
+  currentAmount: number;
+  dueDate: string;
+  isOverdue: boolean;
+  daysOverdue: number;
+  isPaid: boolean;
+  paidAt: string;
+  paymentStatus: string;
+  residentId: string;
+  billTemplateId: string;
+}
+
 export default function PaymentManagement() {
   const [search, setSearch] = useState("");
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    totalCollected: 0,
+    pendingAmount: 0,
+    collectionRate: 0,
+  });
 
-  const payments = [
-    {
-      id: 1,
-      name: "Jigar Prajapati",
-      flat: "D-11",
-      bill: "Maintenance",
-      amount: "₹700",
-      due: "2025-08-15",
-      paid: "2025-07-24",
-      status: "Paid",
-      method: "Online",
-    },
-  ];
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/payments');
+      if (!response.ok) {
+        throw new Error('Failed to fetch payments');
+      }
+      const data = await response.json();
+      setPayments(data);
+
+      // Calculate stats
+      const totalCollected = data
+        .filter((p: Payment) => p.isPaid)
+        .reduce((sum: number, p: Payment) => sum + p.currentAmount, 0);
+
+      const pendingAmount = data
+        .filter((p: Payment) => !p.isPaid)
+        .reduce((sum: number, p: Payment) => sum + p.currentAmount, 0);
+
+      const totalPayments = data.length;
+      const paidPayments = data.filter((p: Payment) => p.isPaid).length;
+      const collectionRate = totalPayments > 0 ? Math.round((paidPayments / totalPayments) * 100) : 0;
+
+      setStats({
+        totalCollected,
+        pendingAmount,
+        collectionRate,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPayments = payments.filter((payment) =>
+    payment.residentName.toLowerCase().includes(search.toLowerCase()) ||
+    payment.flat.toLowerCase().includes(search.toLowerCase()) ||
+    payment.billTitle.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleMarkAsPaid = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/payments/${id}`, {
+        method: 'PUT',
+      });
+      if (response.ok) {
+        fetchPayments(); // Refresh data
+      }
+    } catch (err) {
+      console.error('Error marking as paid:', err);
+    }
+  };
 
   return (
     <div className="p-6 mt-15">
@@ -50,21 +121,21 @@ export default function PaymentManagement() {
         <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
           <div>
             <p className="text-gray-500">Total Collected</p>
-            <h2 className="text-xl font-bold text-green-600">₹700</h2>
+            <h2 className="text-xl font-bold text-green-600">₹{stats.totalCollected}</h2>
           </div>
           <DollarSign className="h-10 w-10 text-green-500" />
         </div>
         <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
           <div>
             <p className="text-gray-500">Pending Amount</p>
-            <h2 className="text-xl font-bold text-red-500">₹0</h2>
+            <h2 className="text-xl font-bold text-red-500">₹{stats.pendingAmount}</h2>
           </div>
           <CreditCard className="h-10 w-10 text-yellow-500" />
         </div>
         <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
           <div>
             <p className="text-gray-500">Collection Rate</p>
-            <h2 className="text-xl font-bold text-blue-600">100%</h2>
+            <h2 className="text-xl font-bold text-blue-600">{stats.collectionRate}%</h2>
           </div>
           <Filter className="h-10 w-10 text-blue-500" />
         </div>
@@ -91,46 +162,75 @@ export default function PaymentManagement() {
 
       {/* Table */}
       <div className="overflow-x-auto mt-6">
-        <table className="min-w-full border-collapse bg-white shadow rounded-lg">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-3 font-semibold">RESIDENT DETAILS</th>
-              <th className="p-3 font-semibold">BILL DETAILS</th>
-              <th className="p-3 font-semibold">AMOUNT</th>
-              <th className="p-3 font-semibold">DUE DATE</th>
-              <th className="p-3 font-semibold">STATUS</th>
-              <th className="p-3 font-semibold">PAYMENT METHOD</th>
-              <th className="p-3 font-semibold">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((p) => (
-              <tr key={p.id} className="border-t hover:bg-gray-50">
-                <td className="p-3">
-                  <p className="font-bold">{p.name}</p>
-                  <p className="text-sm text-gray-600">{p.flat}</p>
-                </td>
-                <td className="p-3">{p.bill}</td>
-                <td className="p-3">{p.amount}</td>
-                <td className="p-3">
-                  {p.due}
-                  <p className="text-xs text-gray-500">Paid: {p.paid}</p>
-                </td>
-                <td className="p-3">
-                  <span className="px-2 py-1 rounded-md text-sm font-medium bg-green-100 text-green-600">
-                    {p.status}
-                  </span>
-                </td>
-                <td className="p-3">{p.method}</td>
-                <td className="p-3">
-                  <button className="text-blue-600 hover:underline">
-                    View Details
-                  </button>
-                </td>
+        {loading ? (
+          <div className="text-center py-8">Loading payments...</div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-600">{error}</div>
+        ) : (
+          <table className="min-w-full border-collapse bg-white shadow rounded-lg">
+            <thead>
+              <tr className="bg-gray-100 text-left">
+                <th className="p-3 font-semibold">RESIDENT DETAILS</th>
+                <th className="p-3 font-semibold">BILL DETAILS</th>
+                <th className="p-3 font-semibold">AMOUNT</th>
+                <th className="p-3 font-semibold">DUE DATE</th>
+                <th className="p-3 font-semibold">STATUS</th>
+                <th className="p-3 font-semibold">PAYMENT METHOD</th>
+                <th className="p-3 font-semibold">ACTIONS</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredPayments.map((p) => (
+                <tr key={p.id} className="border-t hover:bg-gray-50">
+                  <td className="p-3">
+                    <p className="font-bold">{p.residentName}</p>
+                    <p className="text-sm text-gray-600">{p.flat}</p>
+                  </td>
+                  <td className="p-3">{p.billTitle}</td>
+                  <td className="p-3">
+                    ₹{p.currentAmount}
+                    {p.penaltyAmount > 0 && (
+                      <p className="text-xs text-red-500">Penalty: ₹{p.penaltyAmount}</p>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {p.dueDate}
+                    {p.isPaid && p.paidAt && (
+                      <p className="text-xs text-gray-500">Paid: {p.paidAt}</p>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 rounded-md text-sm font-medium ${
+                        p.isPaid
+                          ? 'bg-green-100 text-green-600'
+                          : p.isOverdue
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-yellow-100 text-yellow-600'
+                      }`}
+                    >
+                      {p.isPaid ? 'Paid' : p.isOverdue ? 'Overdue' : 'Pending'}
+                    </span>
+                  </td>
+                  <td className="p-3">{p.isPaid ? 'Online' : '-'}</td>
+                  <td className="p-3">
+                    {!p.isPaid && (
+                      <button
+                        onClick={() => handleMarkAsPaid(p.id)}
+                        className="text-blue-600 hover:underline mr-2"
+                      >
+                        Mark as Paid
+                      </button>
+                    )}
+                    <button className="text-blue-600 hover:underline">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

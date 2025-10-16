@@ -10,7 +10,7 @@ type EmployeeRole =
   | 'Cleaner'
   | 'Other';
 
-type EmployeeStatus = 'Active' | 'On Leave' | 'Inactive';
+type EmployeeStatus = 'Active' | 'Inactive';
 
 export default function AddEmployeeForm() {
   const router = useRouter();
@@ -39,21 +39,11 @@ export default function AddEmployeeForm() {
     if (!name.trim()) return 'Please enter employee name.';
     if (!role) return 'Please select a role.';
     if (!contact.trim()) return 'Please enter contact number.';
-    if (!salary || toNumber(salary) === null || toNumber(salary) <= 0) return 'Please enter a valid salary.';
+    if (!salary || toNumber(salary) === null || toNumber(salary)! <= 0) return 'Please enter a valid salary.';
     if (!joinDate) return 'Please select join date.';
     if (!location.trim()) return 'Please enter location.';
     if (!status) return 'Please select status.';
     return null;
-  }
-
-  function resetForm() {
-    setName('');
-    setRole('');
-    setContact('');
-    setSalary('');
-    setJoinDate('');
-    setLocation('');
-    setStatus('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -109,11 +99,10 @@ export default function AddEmployeeForm() {
       }
 
       setLocalSuccess(body?.message || 'Employee added successfully');
-      // Reset form after success
-      resetForm();
-    } catch (err: unknown) {
-      const error = err as Error;
-      setLocalError(error?.message || 'Network error');
+      // Redirect after success
+      router.push('/admin/employees');
+    } catch (err: any) {
+      setLocalError(err?.message || 'Network error');
     } finally {
       setLoading(false);
     }
@@ -124,9 +113,9 @@ export default function AddEmployeeForm() {
       <div className="mx-auto w-full max-w-5xl">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-6">Add New Employee</h1>
 
-        {localError && (
+        {error && (
           <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {localError}
+            {error}
           </div>
         )}
 

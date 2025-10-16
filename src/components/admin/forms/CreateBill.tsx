@@ -25,22 +25,34 @@ export default function CreateBillForm({ onSubmit }: Props) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Helper to validate numeric input (allows decimals)
+  function isValidNumber(value: string) {
+    return /^\d*\.?\d*$/.test(value);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
     if (!title.trim()) return setError('Please enter bill title.');
     if (!type) return setError('Please select a bill type.');
     if (!amount || Number(amount) <= 0) return setError('Please enter a valid amount.');
     if (!dueDate) return setError('Please select a due date.');
+
     setError(null);
 
-    const payload = { title: title.trim(), type, amount, penalty, dueDate };
+    const payload = {
+      title: title.trim(),
+      type,
+      amount: amount.trim(),
+      penalty: penalty.trim() || '0',
+      dueDate,
+    };
 
     if (onSubmit) {
       onSubmit(payload);
       return;
     }
 
-    // Integrate with backend
     setLoading(true);
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -56,7 +68,14 @@ export default function CreateBillForm({ onSubmit }: Props) {
       if (response.ok) {
         router.push('/admin/payments');
       } else {
-        const errorData = await response.text();
+        // Try parse JSON error first, fallback to text
+        let errorData = '';
+        try {
+          const json = await response.json();
+          errorData = json.error || JSON.stringify(json);
+        } catch {
+          errorData = await response.text();
+        }
         setError(`Failed to create bill: ${errorData}`);
       }
     } catch (err) {
@@ -77,34 +96,48 @@ export default function CreateBillForm({ onSubmit }: Props) {
             </h1>
 
             {error && (
-              <div className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div
+                role="alert"
+                className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate>
               {/* Bill Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                   Bill Title
                 </label>
                 <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  aria-required="true"
+                  aria-invalid={!!error && !title.trim()}
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   placeholder="e.g., Monthly Maintenance - April 2025"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  disabled={loading}
                 />
               </div>
 
               {/* Bill Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
                   Bill Type
                 </label>
                 <select
+                  id="type"
+                  name="type"
+                  aria-required="true"
+                  aria-invalid={!!error && !type}
                   className="w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                   value={type}
                   onChange={(e) => setType(e.target.value as BillType)}
+                  disabled={loading}
                 >
                   <option value="">Select Type</option>
                   <option value="Maintenance">Maintenance</option>
@@ -118,50 +151,72 @@ export default function CreateBillForm({ onSubmit }: Props) {
               {/* Amount & Penalty */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
                     Amount (₹)
                   </label>
                   <input
+                    id="amount"
+                    name="amount"
+                    type="text"
                     inputMode="decimal"
+                    aria-required="true"
+                    aria-invalid={!!error && (!amount || Number(amount) <= 0)}
                     className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                     placeholder="e.g., 1200"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      if (isValidNumber(e.target.value)) setAmount(e.target.value);
+                    }}
+                    disabled={loading}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="penalty" className="block text-sm font-medium text-gray-700 mb-1">
                     Penalty (₹)
                   </label>
                   <input
+                    id="penalty"
+                    name="penalty"
+                    type="text"
                     inputMode="decimal"
                     className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                     placeholder="0"
                     value={penalty}
-                    onChange={(e) => setPenalty(e.target.value)}
+                    onChange={(e) => {
+                      if (isValidNumber(e.target.value)) setPenalty(e.target.value);
+                    }}
+                    disabled={loading}
                   />
                 </div>
               </div>
 
               {/* Due Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
                   Due Date
                 </label>
                 <input
+                  id="dueDate"
+                  name="dueDate"
                   type="date"
+                  aria-required="true"
+                  aria-invalid={!!error && !dueDate}
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
+                  disabled={loading}
                 />
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                className="mt-4 w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 shadow transition-all active:scale-[0.98]"
+                disabled={loading}
+                className={`mt-4 w-full rounded-lg text-white font-semibold px-6 py-3 shadow transition-all active:scale-[0.98] ${
+                  loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                Create Bill
+                {loading ? 'Creating...' : 'Create Bill'}
               </button>
             </form>
           </div>
