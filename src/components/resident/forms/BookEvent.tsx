@@ -19,11 +19,46 @@ export default function NewEventPage() {
     startTime: "",
     endTime: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("Booking Event:", form);
-    alert("Event booked successfully (demo). Hook up backend!");
+    setIsSubmitting(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('http://localhost:3001/resident/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
+        credentials: 'include', // Include cookies for session
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({ type: 'success', text: data.message });
+        // Reset form on success
+        setForm({
+          title: "",
+          venueId: "",
+          attendees: 50,
+          date: "",
+          startTime: "",
+          endTime: "",
+        });
+      } else {
+        setMessage({ type: 'error', text: data.message });
+      }
+    } catch (error) {
+      console.error('Error booking event:', error);
+      setMessage({ type: 'error', text: 'Failed to book event. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -148,12 +183,22 @@ export default function NewEventPage() {
 
         {/* footer */}
         <div className="border-t border-gray-100 px-6 py-4">
+          {message && (
+            <div className={`mb-4 p-3 rounded-lg text-sm ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {message.text}
+            </div>
+          )}
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700"
+            disabled={isSubmitting}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CalendarDays className="h-4 w-4" />
-            Book Now
+            {isSubmitting ? 'Booking...' : 'Book Now'}
           </button>
         </div>
       </form>

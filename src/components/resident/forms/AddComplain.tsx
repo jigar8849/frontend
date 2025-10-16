@@ -12,9 +12,11 @@ export default function NewComplaintPage() {
     date: "",
     file: null as File | null,
   });
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setMessage(null); // Clear previous message
     try {
       const response = await fetch('http://localhost:3001/resident/api/complaints', {
         method: 'POST',
@@ -34,7 +36,7 @@ export default function NewComplaintPage() {
 
       const data = await response.json();
       if (data.success) {
-        alert('Complaint submitted successfully!');
+        setMessage({ type: 'success', text: 'Complaint submitted successfully!' });
         // Reset form
         setForm({
           title: '',
@@ -45,11 +47,11 @@ export default function NewComplaintPage() {
           file: null,
         });
       } else {
-        alert(`Error: ${data.message}`);
+        setMessage({ type: 'error', text: `Error: ${data.message}` });
       }
     } catch (error) {
       console.error('Error submitting complaint:', error);
-      alert('Failed to submit complaint. Please try again.');
+      setMessage({ type: 'error', text: 'Failed to submit complaint. Please try again.' });
     }
   };
 
@@ -59,6 +61,12 @@ export default function NewComplaintPage() {
         <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-gray-900">
           Submit a Complaint
         </h1>
+
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+            {message.text}
+          </div>
+        )}
 
         <form
           onSubmit={handleSubmit}
@@ -71,6 +79,7 @@ export default function NewComplaintPage() {
             </label>
             <input
               type="text"
+              name="title"
               required
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
@@ -86,6 +95,7 @@ export default function NewComplaintPage() {
             </label>
             <div className="relative">
               <select
+                name="category"
                 required
                 value={form.category}
                 onChange={(e) =>
@@ -114,6 +124,7 @@ export default function NewComplaintPage() {
             </label>
             <div className="relative">
               <select
+                name="priority"
                 required
                 value={form.priority}
                 onChange={(e) =>
@@ -138,6 +149,7 @@ export default function NewComplaintPage() {
               Description
             </label>
             <textarea
+              name="description"
               required
               rows={6}
               value={form.description}
@@ -156,6 +168,7 @@ export default function NewComplaintPage() {
             </label>
             <input
               type="date"
+              name="date"
               required
               value={form.date}
               onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}

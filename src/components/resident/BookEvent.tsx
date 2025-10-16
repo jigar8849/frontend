@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -42,20 +42,6 @@ const VENUES: Venue[] = [
   { id: "v4", name: "Terrace Garden", capacity: 80, availableToday: true },
 ];
 
-const INITIAL_EVENTS: EventItem[] = [
-  {
-    id: "e1",
-    title: "dffevf",
-    date: "2025-07-26",
-    startTime: "20:38",
-    endTime: "23:36",
-    venueId: "v1",
-    attendees: 321,
-    organizer: "Jigar Prajapati",
-    status: "Pending",
-  },
-];
-
 /* ------------ helpers ------------ */
 const venueById = (id: string) =>
   VENUES.find((v) => v.id === id)?.name ?? "—";
@@ -75,7 +61,36 @@ const statusPill = (s: EventStatus) =>
 
 /* ------------ page ------------ */
 export default function EventsPage() {
-  const [events, setEvents] = useState<EventItem[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch('http://localhost:3001/resident/api/events', {
+          credentials: 'include', // Include cookies for session
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setEvents(data.events);
+        } else {
+          setError(data.message || 'Failed to fetch events');
+        }
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Failed to load events. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const removeEvent = (id: string) =>
     setEvents((prev) => prev.filter((e) => e.id !== id));
@@ -154,11 +169,19 @@ export default function EventsPage() {
           <h2 className="text-2xl font-semibold">Upcoming Events</h2>
         </div>
 
-        {events.length === 0 ? (
+        {isLoading ? (
+          <div className="p-6 text-sm text-gray-600">
+            Loading events...
+          </div>
+        ) : error ? (
+          <div className="p-6 text-sm text-red-600">
+            {error}
+          </div>
+        ) : events.length === 0 ? (
           <div className="p-6 text-sm text-gray-600">
             No upcoming events.{" "}
             <Link
-              href="/new-event"
+              href="/resident/forms/bookEvent"
               className="text-blue-700 underline hover:text-blue-800"
             >
               Book your first event
