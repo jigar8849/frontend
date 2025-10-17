@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   MessageSquare,
@@ -25,21 +25,6 @@ type Complaint = {
   priority: Priority;
   attachments: number;
 };
-
-/* ---------- demo data ---------- */
-const INITIAL: Complaint[] = [
-  {
-    id: "c1",
-    title: "testing",
-    description:
-      "at night society member talk loudly in gate so it can be disturbing",
-    filedOn: "2025-07-28",
-    category: "Noise",
-    status: "Pending",
-    priority: "High",
-    attachments: 1,
-  },
-];
 
 /* ---------- helpers ---------- */
 function formatDate(iso: string) {
@@ -80,7 +65,36 @@ function pillClass(kind: "status" | "priority", value: string) {
 
 /* ---------- page ---------- */
 export default function ComplaintsPage() {
-  const [items, setItems] = useState<Complaint[]>(INITIAL);
+  const [items, setItems] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch('http://localhost:3001/resident/api/complaints', {
+          credentials: 'include', // Include cookies for session
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setItems(data.complaints);
+        } else {
+          setError(data.message || 'Failed to fetch complaints');
+        }
+      } catch (err) {
+        console.error('Error fetching complaints:', err);
+        setError('Failed to load complaints. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplaints();
+  }, []);
 
   const stats = useMemo(() => {
     const total = items.length;
@@ -146,7 +160,11 @@ export default function ComplaintsPage() {
           <h2 className="text-xl font-semibold">Your Complaints</h2>
         </div>
 
-        {items.length === 0 ? (
+        {loading ? (
+          <div className="p-6 text-sm text-gray-600">Loading complaints...</div>
+        ) : error ? (
+          <div className="p-6 text-sm text-red-600">Error: {error}</div>
+        ) : items.length === 0 ? (
           <div className="p-6 text-sm text-gray-600">No complaints yet.</div>
         ) : (
           <ul className="divide-y divide-gray-100">
